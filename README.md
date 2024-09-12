@@ -1,5 +1,5 @@
 ---
-title: CS553_Example
+title: Chatbot2
 emoji: 💬
 colorFrom: yellow
 colorTo: purple
