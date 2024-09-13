@@ -9,11 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Discord Notifcation
+      - name: Discord Notification
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"A new committ was pushed to the main branch by $GITHUB_ACTOR. :smile: Jed is cool!\"}" \
+          -d "{\"content\": \"A new commit was pushed to the main branch by @${{ github.actor }}. :smile: Jed is cool!\"}" \
           $DISCORD_WEBHOOK_URL
-        
