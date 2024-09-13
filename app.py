@@ -14,15 +14,15 @@ stop_inference = False
 # For emotion suggestion
 def suggest_song(mood):
     """Provide song recommendations based on user feelings."""
-    if mood == "happy":
+    mood_lower = mood.lower()
+    if "happy" in mood.lower()
         return "How about listening to 'Happy' by Pharrell Williams?"
-    elif mood == "sad":
+    elif "sad" in mood_lower:
         return "You might enjoy 'Someone Like You' by Adele."
-    elif mood == "angry":
+    elif "angry" in mood_lower:
         return "Listen to 'Killing in the Name' by Rage Against the Machine."
     else:
         return "Tell me more about your mood!"
-
 
 def respond(
     message,
@@ -162,14 +162,12 @@ with gr.Blocks(css=custom_css) as demo:
 
     chat_history = gr.Chatbot(label="Chat")
 
-    user_input = gr.Textbox(show_label=False, placeholder="How are you feeling?:")
-
-    mood_selection = gr.Dropdown(choices=["happy", "sad", "angry", "neutral"], label="Select your mood:")
+    user_input = gr.Textbox(show_label=False, placeholder="Tell me how you are feeling:")
 
     cancel_button = gr.Button("Cancel Inference", variant="danger")
 
     # Adjusted to ensure history is maintained and passed correctly
-    user_input.submit(respond, [user_input, chat_history, mood_selection, system_message, max_tokens, top_p, use_local_model], chat_history)
+    user_input.submit(respond, [user_input, chat_history, user_input, system_message, max_tokens, top_p, use_local_model], chat_history)
 
     cancel_button.click(cancel_inference)
 
