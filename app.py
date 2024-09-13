@@ -12,12 +12,14 @@ stop_inference = False
 
 
 # For emotion suggestion
-def suggest_song(message):
+def suggest_song(mood):
     """Provide song recommendations based on user feelings."""
-    if "happy" in message.lower():
+    if mood == "happy":
         return "How about listening to 'Happy' by Pharrell Williams?"
-    elif "sad" in message.lower():
+    elif mood == "sad":
         return "You might enjoy 'Someone Like You' by Adele."
+    elif mood == "angry":
+        return "Listen to 'Killing in the Name' by Rage Against the Machine."
     else:
         return "Tell me more about your mood!"
 
@@ -25,6 +27,7 @@ def suggest_song(message):
 def respond(
     message,
     history: list[tuple[str, str]],
+    mood: str,
     system_message="You are a music expert chatbot that provides song recommendations based on user emotions.",
     max_tokens=512,
     top_p=0.95,
@@ -38,8 +41,10 @@ def respond(
     if history is None:
         history = []
 
+    response = ""  # Initialize response
+
     # Emotion detection logic
-    emotion_response = suggest_song(message)
+    emotion_response = suggest_song(mood)
     response += "\n" + emotion_response # Append emotion-based song recommendation
 
     if use_local_model:
@@ -77,7 +82,6 @@ def respond(
                 messages.append({"role": "assistant", "content": val[1]})
         messages.append({"role": "user", "content": message})
 
-        response = ""
         for message_chunk in client.chat_completion(
             messages,
             max_tokens=max_tokens,
@@ -88,9 +92,6 @@ def respond(
                 response = "Inference cancelled."
                 yield history + [(message, response)]
                 return
-            if stop_inference:
-                response = "Inference cancelled."
-                break
             token = message_chunk.choices[0].delta.content
             response += token
             yield history + [(message, response)]  # Yield history + new response
@@ -163,10 +164,12 @@ with gr.Blocks(css=custom_css) as demo:
 
     user_input = gr.Textbox(show_label=False, placeholder="How are you feeling?:")
 
+    mood_selection = gr.Dropdown(choices=["happy", "sad", "angry", "neutral"], label="Select your mood:")
+
     cancel_button = gr.Button("Cancel Inference", variant="danger")
 
     # Adjusted to ensure history is maintained and passed correctly
-    user_input.submit(respond, [user_input, chat_history, system_message, max_tokens, top_p, use_local_model], chat_history)
+    user_input.submit(respond, [user_input, chat_history, mood_selection, system_message, max_tokens, top_p, use_local_model], chat_history)
 
     cancel_button.click(cancel_inference)
 
