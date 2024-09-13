@@ -15,10 +15,14 @@ def respond(
     history: list[tuple[str, str]],
     system_message="You are a friendly Chatbot.",
     max_tokens=512,
-    temperature=0.7,
     top_p=0.95,
     use_local_model=False,
 ):
+
+    # Emotion detection logic
+    emotion_response = suggest_song(message)
+    response += "\n" + emotion_response # Append emotion-based song recommendation
+
     global stop_inference
     stop_inference = False  # Reset cancellation flag
 
@@ -40,7 +44,6 @@ def respond(
         for output in pipe(
             messages,
             max_new_tokens=max_tokens,
-            temperature=temperature,
             do_sample=True,
             top_p=top_p,
         ):
@@ -67,7 +70,6 @@ def respond(
             messages,
             max_tokens=max_tokens,
             stream=True,
-            temperature=temperature,
             top_p=top_p,
         ):
             if stop_inference:
@@ -89,7 +91,7 @@ def cancel_inference():
 # Custom CSS for a fancy look
 custom_css = """
 #main-container {
-    background-color: #000000;
+    background-color: #f0f0f0;
     font-family: 'Times New Roman', sans-serif;
 }
 
@@ -97,13 +99,13 @@ custom_css = """
     max-width: 700px;
     margin: 0 auto;
     padding: 20px;
-    background: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: black;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     border-radius: 10px;
 }
 
 .gr-button {
-    background-color: #4CAF50;
+    background-color: #007bff;
     color: white;
     border: none;
     border-radius: 5px;
@@ -113,7 +115,7 @@ custom_css = """
 }
 
 .gr-button:hover {
-    background-color: #45a049;
+    background-color: #0056b3;
 }
 
 .gr-slider input {
@@ -126,7 +128,7 @@ custom_css = """
 
 #title {
     text-align: center;
-    font-size: 2em;
+    font-size: 2.5em;
     margin-bottom: 20px;
     color: #333;
 }
@@ -134,21 +136,20 @@ custom_css = """
 
 # Define the interface
 with gr.Blocks(css=custom_css) as demo:
-    gr.Markdown("<h1 style='text-align: center;'>🌟 Fancy AI Chatbot 🌟</h1>")
+    gr.Markdown("<h1 style='text-align: center;'>🎶 Emotion-Based Song Recommendation Bot 🎶</h1>")
     gr.Markdown("Interact with the AI chatbot using customizable settings below.")
 
     with gr.Row():
-        system_message = gr.Textbox(value="You are a friendly Chatbot.", label="System message", interactive=True)
+        system_message = gr.Textbox(value="You are a music expert chatbot that provides song recommendations based on user emotions", label="System message", interactive=True)
         use_local_model = gr.Checkbox(label="Use Local Model", value=False)
 
     with gr.Row():
         max_tokens = gr.Slider(minimum=1, maximum=2048, value=512, step=1, label="Max new tokens")
-        temperature = gr.Slider(minimum=0.1, maximum=4.0, value=0.7, step=0.1, label="Temperature")
         top_p = gr.Slider(minimum=0.1, maximum=1.0, value=0.95, step=0.05, label="Top-p (nucleus sampling)")
 
     chat_history = gr.Chatbot(label="Chat")
 
-    user_input = gr.Textbox(show_label=False, placeholder="Type your message here...")
+    user_input = gr.Textbox(show_label=False, placeholder="How are you feeling?:")
 
     cancel_button = gr.Button("Cancel Inference", variant="danger")
 
