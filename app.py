@@ -10,18 +10,26 @@ pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dty
 # Global flag to handle cancellation
 stop_inference = False
 
+
+# For emotion suggestion
+def suggest_song(message):
+    """Provide song recommendations based on user feelings."""
+    if "happy" in message.lower():
+        return "How about listening to 'Happy' by Pharrell Williams?"
+    elif "sad" in message.lower():
+        return "You might enjoy 'Someone Like You' by Adele."
+    else:
+        return "Tell me more about your mood!"
+
+
 def respond(
     message,
     history: list[tuple[str, str]],
-    system_message="You are a friendly Chatbot.",
+    system_message="You are a music expert chatbot that provides song recommendations based on user emotions.",
     max_tokens=512,
     top_p=0.95,
     use_local_model=False,
 ):
-
-    # Emotion detection logic
-    emotion_response = suggest_song(message)
-    response += "\n" + emotion_response # Append emotion-based song recommendation
 
     global stop_inference
     stop_inference = False  # Reset cancellation flag
@@ -29,6 +37,10 @@ def respond(
     # Initialize history if it's None
     if history is None:
         history = []
+
+    # Emotion detection logic
+    emotion_response = suggest_song(message)
+    response += "\n" + emotion_response # Append emotion-based song recommendation
 
     if use_local_model:
         # local inference 
