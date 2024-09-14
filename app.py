@@ -73,7 +73,7 @@ def respond(
                 response = "Inference cancelled."
                 yield history + [(message, response)]
                 return
-            token = output['generated_text'][-1]['content']
+            token = output['generated_text'] 
             response += token
             yield history + [(message, response)]  # Yield history + new response
 
@@ -175,7 +175,7 @@ with gr.Blocks(css=custom_css) as demo:
     cancel_button = gr.Button("Cancel Inference", variant="danger")
 
     # Adjusted to ensure history is maintained and passed correctly
-    user_input.submit(respond, [user_input, chat_history, user_input, client_id, client_secret, system_message, max_tokens, use_local_model], chat_history)
+    user_input.submit(respond, [user_input, chat_history, system_message, max_tokens, use_local_model, client_id, client_secret], chat_history)
 
     cancel_button.click(cancel_inference)
 
