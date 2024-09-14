@@ -19,7 +19,7 @@ def spotify_rec(track_name, artist, client_id, client_secret):
     client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
     
-    # Get track URI
+    # Get track 
     results = sp.search(q=f"track:{track_name} artist:{artist}", type='track')
     if not results['tracks']['items']:
         return "No recommendations found for the given track name and artist."
