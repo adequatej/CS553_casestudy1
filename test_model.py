@@ -1,5 +1,7 @@
 import pytest
 
+from app import suggest_song
+
 def test_suggest_song():
     assert suggest_song("happy") == "You might enjoy 'Happy' by Pharrell Williams."
     assert suggest_song("sad") == "You might enjoy 'Someone Like You' by Adele."
