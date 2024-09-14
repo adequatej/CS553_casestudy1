@@ -10,7 +10,7 @@ client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
 pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
 
 # Spotify API setup
-def spotify_rec(mood, client_id, client_secret):
+def spotify_rec(message, client_id, client_secret):
     if not client_id or not client_secret:
         return "Please provide Spotify API credentials."
 
@@ -19,7 +19,7 @@ def spotify_rec(mood, client_id, client_secret):
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
     # Search for songs based on mood
-    results = sp.search(q=mood, type='track', limit=5)
+    results = sp.search(q=message, type='track', limit=5)
     if not results['tracks']['items']:
         return "No songs found for this mood."
 
@@ -37,7 +37,6 @@ def respond(
     history: list[tuple[str, str]],
     system_message="You are a music expert chatbot that provides song recommendations based on user emotions.",
     max_tokens=512,
-    top_p=0.95,
     use_local_model=False,
 ):
 
@@ -51,7 +50,7 @@ def respond(
     response = ""  # Initialize response
 
     # Get Spotify Recs based on the user's mood
-    recommendations = spotify_rec(mood, client_id, client_secret)
+    recommendations = spotify_rec(message, client_id, client_secret)
     response += "\n" + recommendations    
 
     if use_local_model:
@@ -69,7 +68,6 @@ def respond(
             messages,
             max_new_tokens=max_tokens,
             do_sample=True,
-            top_p=top_p,
         ):
             if stop_inference:
                 response = "Inference cancelled."
@@ -93,7 +91,6 @@ def respond(
             messages,
             max_tokens=max_tokens,
             stream=True,
-            top_p=top_p,
         ):
             if stop_inference:
                 response = "Inference cancelled."
@@ -165,7 +162,6 @@ with gr.Blocks(css=custom_css) as demo:
 
     with gr.Row():
         max_tokens = gr.Slider(minimum=1, maximum=2048, value=512, step=1, label="Max new tokens")
-        top_p = gr.Slider(minimum=0.1, maximum=1.0, value=0.95, step=0.05, label="Top-p (nucleus sampling)")
 
     chat_history = gr.Chatbot(label="Chat")
 
@@ -179,7 +175,7 @@ with gr.Blocks(css=custom_css) as demo:
     cancel_button = gr.Button("Cancel Inference", variant="danger")
 
     # Adjusted to ensure history is maintained and passed correctly
-    user_input.submit(respond, [user_input, chat_history, user_input, client_id, client_secret, system_message, max_tokens, top_p, use_local_model], chat_history)
+    user_input.submit(respond, [user_input, chat_history, user_input, client_id, client_secret, system_message, max_tokens, use_local_model], chat_history)
 
     cancel_button.click(cancel_inference)
 
