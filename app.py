@@ -2,32 +2,39 @@ import gradio as gr
 from huggingface_hub import InferenceClient
 import torch
 from transformers import pipeline
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
 # Inference client setup
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
 pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
 
+# Spotify API setup
+def spotify_rec(mood, client_id, client_secret):
+    if not client_id or not client_secret:
+        return "Please provide Spotify API credentials."
+
+    # Spotify Credentials
+    client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+    sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+    # Search for songs based on mood
+    results = sp.search(q=mood, type='track', limit=5)
+    if not results['tracks']['items']:
+        return "No songs found for this mood."
+
+    recommendations = []
+    for track in results['tracks']['items']:
+        recommendations.append(f"{track['name']} by {track['artists'][0]['name']}")
+
+    return "\n".join(recommendations)
+
 # Global flag to handle cancellation
 stop_inference = False
-
-
-# For emotion suggestion
-def suggest_song(mood):
-    """Provide song recommendations based on user feelings."""
-    mood_lower = mood.lower()
-    if "happy" in mood.lower:
-        return "How about listening to 'Happy' by Pharrell Williams?"
-    elif "sad" in mood_lower:
-        return "You might enjoy 'Someone Like You' by Adele."
-    elif "angry" in mood_lower:
-        return "Listen to 'Killing in the Name' by Rage Against the Machine."
-    else:
-        return "Tell me more about your mood!"
 
 def respond(
     message,
     history: list[tuple[str, str]],
-    mood: str,
     system_message="You are a music expert chatbot that provides song recommendations based on user emotions.",
     max_tokens=512,
     top_p=0.95,
@@ -43,9 +50,9 @@ def respond(
 
     response = ""  # Initialize response
 
-    # Emotion detection logic
-    emotion_response = suggest_song(mood)
-    response += "\n" + emotion_response # Append emotion-based song recommendation
+    # Get Spotify Recs based on the user's mood
+    recommendations = spotify_rec(mood, client_id, client_secret)
+    response += "\n" + recommendations    
 
     if use_local_model:
         # local inference 
@@ -162,12 +169,17 @@ with gr.Blocks(css=custom_css) as demo:
 
     chat_history = gr.Chatbot(label="Chat")
 
-    user_input = gr.Textbox(show_label=False, placeholder="Tell me how you are feeling:")
+    user_input = gr.Textbox(show_label=False, placeholder="What kind of music do you desire?")
+    
+    client_id = gr.Textbox(show_label=False, placeholder="Spotify Client ID:")
+    
+    client_secret = gr.Textbox(show_label=False, placeholder="Spotify Client Secret:")
+
 
     cancel_button = gr.Button("Cancel Inference", variant="danger")
 
     # Adjusted to ensure history is maintained and passed correctly
-    user_input.submit(respond, [user_input, chat_history, user_input, system_message, max_tokens, top_p, use_local_model], chat_history)
+    user_input.submit(respond, [user_input, chat_history, user_input, client_id, client_secret, system_message, max_tokens, top_p, use_local_model], chat_history)
 
     cancel_button.click(cancel_inference)
 
