@@ -26,4 +26,9 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest test_model.py  # specify your test file
+          pytest unit_tests.py
+
+       - name: Push to hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: git push https://jgeoghegan24:$HF_TOKEN@huggingface.co/spaces/jgeoghegan24/Chatbot2 main
