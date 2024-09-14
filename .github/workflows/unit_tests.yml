@@ -1,29 +1,29 @@
-name: Python Tests
+name: Run Tests
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
+
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check out the repository
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10.12'  
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.12'  
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt  
+          pip install pytest
 
-    - name: Run tests
-      run: |
-        pytest test_model.py 
+      - name: Run tests
+        run: |
+          pytest test_model.py  # specify your test file
