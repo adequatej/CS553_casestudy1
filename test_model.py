@@ -1,10 +1,17 @@
+# test_app.py
 import pytest
+from app import spotify_rec  # Import the function to be tested
 
-from app import suggest_song
+def test_spotify_rec():
+    # Define your test input
+    track_name = "Shape of You"
+    artist = "Ed Sheeran"
+    client_id = "your_client_id"
+    client_secret = "your_client_secret"
 
-def test_suggest_song():
-    assert suggest_song("happy") == "You might enjoy 'Happy' by Pharrell Williams."
-    assert suggest_song("sad") == "You might enjoy 'Someone Like You' by Adele."
-    assert suggest_song("angry") == "Listen to 'Killing in the Name' by Rage Against the Machine."
-    assert suggest_song("neutral") == "Tell me more about your mood!"
+    # Call the function
+    result = spotify_rec(track_name, artist, client_id, client_secret)
 
+    # Check that the result is not empty and is a string
+    assert isinstance(result, str)
+    assert len(result) > 0
