@@ -56,6 +56,8 @@ def respond(
     if history is None:
         history = []
 
+    response = ""  # Initialize response
+
     # Get Spotify Recs based on the user's input
     recommendations = spotify_rec(track_name, artist, client_id, client_secret)
     response += "\n" + recommendations    
@@ -68,23 +70,21 @@ def respond(
                 messages.append({"role": "user", "content": val[0]})
             if val[1]:
                 messages.append({"role": "assistant", "content": val[1]})
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
         response = ""
         for output in pipe(
             messages,
             max_new_tokens=max_tokens,
-            temperature=temperature,
             do_sample=True,
-            top_p=top_p,
         ):
             if stop_inference:
                 response = "Inference cancelled."
-                yield history + [(message, response)]
+                yield history + [(track_name, response)]
                 return
-            token = output['generated_text'][-1]['content']
+            token = output['generated_text'] 
             response += token
-            yield history + [(message, response)]  # Yield history + new response
+            yield history + [(track_name, response)]  # Yield history + new response
 
     else:
         # API-based inference 
@@ -94,26 +94,20 @@ def respond(
                 messages.append({"role": "user", "content": val[0]})
             if val[1]:
                 messages.append({"role": "assistant", "content": val[1]})
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
-        response = ""
         for message_chunk in client.chat_completion(
             messages,
             max_tokens=max_tokens,
             stream=True,
-            temperature=temperature,
-            top_p=top_p,
         ):
             if stop_inference:
                 response = "Inference cancelled."
-                yield history + [(message, response)]
+                yield history + [(track_name, response)]
                 return
-            if stop_inference:
-                response = "Inference cancelled."
-                break
             token = message_chunk.choices[0].delta.content
             response += token
-            yield history + [(message, response)]  # Yield history + new response
+            yield history + [(track_name, response)]  # Yield history + new response
 
 
 def cancel_inference():
