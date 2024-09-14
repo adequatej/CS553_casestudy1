@@ -9,35 +9,44 @@ from spotipy.oauth2 import SpotifyClientCredentials
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
 pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
 
-# Spotify API setup
-def spotify_rec(message, client_id, client_secret):
+# Function to get Spotify recommendations
+def spotify_rec(track_name, artist, client_id, client_secret):
+    # Validate client ID and client secret
     if not client_id or not client_secret:
         return "Please provide Spotify API credentials."
 
-    # Spotify Credentials
+    # Set up Spotify credentials
     client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-
-    # Search for songs based on mood
-    results = sp.search(q=message, type='track', limit=5)
+    
+    # Get track URI
+    results = sp.search(q=f"track:{track_name} artist:{artist}", type='track')
     if not results['tracks']['items']:
-        return "No songs found for this mood."
+        return "No recommendations found for the given track name and artist."
+    
+    track_uri = results['tracks']['items'][0]['uri']
 
-    recommendations = []
-    for track in results['tracks']['items']:
-        recommendations.append(f"{track['name']} by {track['artists'][0]['name']}")
-
-    return "\n".join(recommendations)
+    # Get recommended tracks
+    recommendations = sp.recommendations(seed_tracks=[track_uri])['tracks']
+    
+    if not recommendations:
+        return "No recommendations found."
+    
+    recommendation_list = [f"{track['name']} by {track['artists'][0]['name']}" for track in recommendations]
+    return "\n".join(recommendation_list)
 
 # Global flag to handle cancellation
 stop_inference = False
 
 def respond(
-    message,
+    track_name,
+    artist,
     history: list[tuple[str, str]],
     system_message="You are a music expert chatbot that provides song recommendations based on user emotions.",
     max_tokens=512,
     use_local_model=False,
+    client_id=None,
+    client_secret=None
 ):
 
     global stop_inference
@@ -49,8 +58,8 @@ def respond(
 
     response = ""  # Initialize response
 
-    # Get Spotify Recs based on the user's mood
-    recommendations = spotify_rec(message, client_id, client_secret)
+    # Get Spotify Recs based on the user's input
+    recommendations = spotify_rec(track_name, artist, client_id, client_secret)
     response += "\n" + recommendations    
 
     if use_local_model:
@@ -61,7 +70,7 @@ def respond(
                 messages.append({"role": "user", "content": val[0]})
             if val[1]:
                 messages.append({"role": "assistant", "content": val[1]})
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
         response = ""
         for output in pipe(
@@ -71,11 +80,11 @@ def respond(
         ):
             if stop_inference:
                 response = "Inference cancelled."
-                yield history + [(message, response)]
+                yield history + [(track_name, response)]
                 return
             token = output['generated_text'] 
             response += token
-            yield history + [(message, response)]  # Yield history + new response
+            yield history + [(track_name, response)]  # Yield history + new response
 
     else:
         # API-based inference 
@@ -85,7 +94,7 @@ def respond(
                 messages.append({"role": "user", "content": val[0]})
             if val[1]:
                 messages.append({"role": "assistant", "content": val[1]})
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
         for message_chunk in client.chat_completion(
             messages,
@@ -94,11 +103,11 @@ def respond(
         ):
             if stop_inference:
                 response = "Inference cancelled."
-                yield history + [(message, response)]
+                yield history + [(track_name, response)]
                 return
             token = message_chunk.choices[0].delta.content
             response += token
-            yield history + [(message, response)]  # Yield history + new response
+            yield history + [(track_name, response)]  # Yield history + new response
 
 
 def cancel_inference():
@@ -165,20 +174,24 @@ with gr.Blocks(css=custom_css) as demo:
 
     chat_history = gr.Chatbot(label="Chat")
 
-    user_input = gr.Textbox(show_label=False, placeholder="What kind of music do you desire?")
+    # New input fields for track name, artist, client ID, and client secret
+    track_name = gr.Textbox(show_label=False, placeholder="Enter a song name:")
+    artist = gr.Textbox(show_label=False, placeholder="Enter the artist:")
     
     client_id = gr.Textbox(show_label=False, placeholder="Spotify Client ID:")
-    
-    client_secret = gr.Textbox(show_label=False, placeholder="Spotify Client Secret:")
-
+    client_secret = gr.Textbox(show_label=False, placeholder="Spotify Client Secret:", type="password")
 
     cancel_button = gr.Button("Cancel Inference", variant="danger")
 
     # Adjusted to ensure history is maintained and passed correctly
-    user_input.submit(respond, [user_input, chat_history, system_message, max_tokens, use_local_model, client_id, client_secret], chat_history)
+    track_name.submit(respond, [track_name, artist, chat_history, system_message, max_tokens, use_local_model, client_id, client_secret], chat_history)
+    
+    artist.submit(respond, [track_name, artist, chat_history, system_message, max_tokens, use_local_model, client_id, client_secret], chat_history)
 
     cancel_button.click(cancel_inference)
 
 if __name__ == "__main__":
     demo.launch(share=False)  # Remove share=True because it's not supported on HF Spaces
+
+
 
