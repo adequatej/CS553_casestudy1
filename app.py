@@ -15,7 +15,7 @@ stop_inference = False
 def suggest_song(mood):
     """Provide song recommendations based on user feelings."""
     mood_lower = mood.lower()
-    if "happy" in mood.lower()
+    if "happy" in mood.lower:
         return "How about listening to 'Happy' by Pharrell Williams?"
     elif "sad" in mood_lower:
         return "You might enjoy 'Someone Like You' by Adele."
