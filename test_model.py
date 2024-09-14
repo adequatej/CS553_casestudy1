@@ -1,9 +1,7 @@
-# test_app.py
 import pytest
-from app import spotify_rec  # Import the function to be tested
+from app import spotify_rec  
 
 def test_spotify_rec():
-    # Define your test input
     track_name = "Shape of You"
     artist = "Ed Sheeran"
     client_id = "your_client_id"
