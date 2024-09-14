@@ -1,5 +1,5 @@
 ---
-title: Chatbot2
+title: Music Recommendation Engine Bot
 emoji: 💬
 colorFrom: yellow
 colorTo: purple
