@@ -5,7 +5,7 @@ MACHINE=paffenroth-23.dyn.wpi.edu
 STUDENT_ADMIN_KEY_PATH=~/CS553/Case_study_2/student-admin_key
 
 # Clean up from previous runs
-ssh-keygen -f "/home/rcpaffenroth/.ssh/known_hosts" -R "[paffenroth-23.dyn.wpi.edu]:21003"
+ssh-keygen -f "/home/jgeoghegan/.ssh/known_hosts" -R "[paffenroth-23.dyn.wpi.edu]:22004"
 rm -rf tmp
 
 # Create a temporary directory
@@ -49,10 +49,10 @@ echo "checking that the authorized_keys file is correct"
 ssh -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE} "cat ~/.ssh/authorized_keys"
 
 # clone the repo
-git clone https://github.com/rcpaffenroth/CS553_example
+git clone https://github.com/adequatej/CS553_casestudy1
 
 # Copy the files to the server
-scp -P ${PORT} -o StrictHostKeyChecking=no -r CS553_example student-admin@${MACHINE}:~/
+scp -P ${PORT} -o StrictHostKeyChecking=no -r CS553_casestudy1 student-admin@${MACHINE}:~/
 
 # check that the code in installed and start up the product
 # COMMAND="ssh -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
