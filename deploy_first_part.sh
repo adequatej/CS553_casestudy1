@@ -22,7 +22,7 @@ chmod 600 student-admin_key*
 
 # Create a unique key
 rm -f mykey*
-ssh-keygen -f mykey -t ed25519 -N "careful"
+ssh-keygen -f mykey -t ed25519 -N "youwillneverguessthis291024"
 
 # Insert the key into the authorized_keys file on the server
 # One > creates
