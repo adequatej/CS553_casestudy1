@@ -6,13 +6,13 @@ STUDENT_ADMIN_KEY_PATH=~/CS553/Case_study_2
 
 # Clean up from previous runs
 ssh-keygen -f "/home/jgeoghegan/.ssh/known_hosts" -R "[paffenroth-23.dyn.wpi.edu]:22004"
-rm -rf ~/CS553/Case_study_2/tmp
+rm -rf tmp
 
 # Create a temporary directory
-mkdir ~/CS553/Case_study_2/tmp
+mkdir tmp
 
 # copy the key to the temporary directory
-cp ${STUDENT_ADMIN_KEY_PATH}/student-admin_key* ~/CS553/Case_study_2/tmp/
+cp ${STUDENT_ADMIN_KEY_PATH}/student-admin_key* tmp
 
 # Change to the temporary directory
 cd tmp
