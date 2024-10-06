@@ -2,7 +2,7 @@
 
 PORT=22004
 MACHINE=paffenroth-23.dyn.wpi.edu
-STUDENT_ADMIN_KEY_PATH=~/CS553/Case_study_2/student-admin_key
+STUDENT_ADMIN_KEY_PATH=~/CS553/Case_study_2
 
 # Clean up from previous runs
 ssh-keygen -f "/home/jgeoghegan/.ssh/known_hosts" -R "[paffenroth-23.dyn.wpi.edu]:22004"
