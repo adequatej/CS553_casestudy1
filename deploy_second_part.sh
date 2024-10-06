@@ -11,7 +11,7 @@ eval "$(ssh-agent -s)"
 ssh-add mykey
 
 # check that the code in installed and start up the product
-COMMAND="ssh -i tmp/mykey -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
+COMMAND="ssh -i mykey -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
 ${COMMAND} "ls ~/CS553/Case_study_1/Chatbot2"
 ${COMMAND} "sudo apt install -qq -y python3-venv"
 ${COMMAND} "cd ~/CS553/Case_study_1/Chatbot2 && python3 -m venv venv"
