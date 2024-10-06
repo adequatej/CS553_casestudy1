@@ -20,7 +20,7 @@ cd tmp
 # Set the permissions of the key
 chmod 600 student-admin_key*
 
-# Prompt the user for a passphrase
+# Added prompt the user for a passphrase for security
 read -sp "Enter a passphrase for the new key: " PASSPHRASE
 echo
 
@@ -60,20 +60,3 @@ git clone https://github.com/adequatej/CS553_casestudy1
 
 # Copy the files to the server
 scp -P ${PORT} -o StrictHostKeyChecking=no -r CS553_casestudy1 student-admin@${MACHINE}:~/
-
-# check that the code is installed and start up the product
-# COMMAND="ssh -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
-
-# ${COMMAND} "ls ~/CS553_casestudy1"
-# ${COMMAND} "sudo apt install -qq -y python3-venv"
-# ${COMMAND} "cd ~/CS553_casestudy1 && python3 -m venv venv"
-# ${COMMAND} "cd ~/CS553_casestudy1 && source venv/bin/activate && pip install -r requirements.txt"
-# ${COMMAND} "nohup ~/CS553_casestudy1/venv/bin/python3 ~/CS553_casestudy1/app.py > log.txt 2>&1 &"
-
-# nohup ./whatever > /dev/null 2>&1 
-
-# debugging ideas
-# sudo apt-get install gh
-# gh auth login
-# requests.exceptions.HTTPError: 429 Client Error: Too Many Requests for url: https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta/v1/chat/completions
-# log.txt
