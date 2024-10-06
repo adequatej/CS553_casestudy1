@@ -5,3 +5,4 @@ transformers==4.43.*
 accelerate==0.33.*
 spotipy
 pytest
+pydantic==2.6.*
