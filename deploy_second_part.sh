@@ -7,11 +7,17 @@ MACHINE=paffenroth-23.dyn.wpi.edu
 cd tmp
 
 # Add the key to the ssh-agent
+log "Starting SSH agent and adding key"
 eval "$(ssh-agent -s)"
-ssh-add mykey
+# with error handling
+ssh-add mykey || { echo "[ERROR] Failed to add SSH key"; exit 1; }
 
 # check that the code in installed and start up the product
+
 COMMAND="ssh -i mykey -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
+
+log "Checking project directory and setting up virtual environment"
+
 ${COMMAND} "ls ~/CS553_casestudy1"
 ${COMMAND} "sudo apt install -qq -y python3-venv"
 ${COMMAND} "cd ~/CS553_casestudy1 && python3 -m venv venv"
