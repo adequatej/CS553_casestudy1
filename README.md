@@ -21,10 +21,13 @@ pinned: false
 Case Study 1
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 JED
 >>>>>>> 0ad1ac4c45b371b4e9269571f5cc8744a3534f48
 
+=======
+>>>>>>> f101fcdee4e923cbcbc0f440ecb472135126702d
 Case Study 2
 
 
