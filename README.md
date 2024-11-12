@@ -26,4 +26,5 @@ Case Study 2
 Case Study 3:
 - Shared VM on Docker!!!
 
-- 
+- Copy files from local to class-VM: scp -i ~/CS553/Case_study_2/my_key -P 2222 -r ~/CS553/Case_study_1/Chatbot2 group4@melnibone.wpi.edu:/home/group4/Case_study_3/
+
