@@ -9,4 +9,22 @@ app_file: app.py
 pinned: false
 ---
 
-An example chatbot using [Gradio](https://gradio.app), [`huggingface_hub`](https://huggingface.co/docs/huggingface_hub/v0.22.2/en/index), and the [Hugging Face Inference API](https://huggingface.co/docs/api-inference/index), as well as Spotify's API.
+# Usage
+- Gradio
+- Streamlit
+- HuggingFace
+- HuggingFace Inference API
+- Spotify API
+- Docker
+
+
+Case Study 1
+
+Case Study 2
+
+
+Case Study 3:
+- Shared VM on Docker!!!
+
+- Copy files from local to class-VM: scp -i ~/CS553/Case_study_2/my_key -P 2222 -r ~/CS553/Case_study_1/Chatbot2 group4@melnibone.wpi.edu:/home/group4/Case_study_3/
+
