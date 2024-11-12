@@ -19,7 +19,13 @@ pinned: false
 
 
 Case Study 1
+<<<<<<< HEAD
 - BOOM
+=======
+
+JED
+
+>>>>>>> b1392f1dab19f2b76f4416a7a365bf885fe380e7
 Case Study 2
 
 
