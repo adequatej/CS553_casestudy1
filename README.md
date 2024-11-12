@@ -19,7 +19,8 @@ pinned: false
 
 
 Case Study 1
-- BOOM
+
+
 Case Study 2
 
 
