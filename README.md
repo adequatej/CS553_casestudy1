@@ -20,8 +20,6 @@ pinned: false
 
 Case Study 1
 
-JED
-
 Case Study 2
 
 
