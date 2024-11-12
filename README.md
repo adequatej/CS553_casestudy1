@@ -16,3 +16,14 @@ pinned: false
 - HuggingFace Inference API
 - Spotify API
 - Docker
+
+
+Case Study 1
+
+Case Study 2
+
+
+Case Study 3:
+- Shared VM on Docker!!!
+
+- 
