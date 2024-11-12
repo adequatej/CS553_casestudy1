@@ -19,7 +19,9 @@ pinned: false
 
 
 Case Study 1
-- YUH
+
+JED
+
 Case Study 2
 
 
