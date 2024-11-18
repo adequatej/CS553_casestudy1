@@ -5,16 +5,6 @@ from transformers import pipeline
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from prometheus_client import start_http_server, Summary, Counter, Gauge
-import time
-
-
-# Define metrics
-REQUEST_COUNTER = Counter('app_requests_total', 'Total number of requests')
-SUCCESSFUL_REQUESTS = Counter('app_successful_requests_total', 'Total number of successful requests')
-FAILED_REQUESTS = Counter('app_failed_requests_total', 'Total number of failed requests')
-REQUEST_DURATION = Summary('app_request_duration_seconds', 'Time spent processing request')
-
 # Inference client setup
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
 pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
@@ -61,72 +51,63 @@ def respond(
 
     global stop_inference
     stop_inference = False  # Reset cancellation flag
-    REQUEST_COUNTER.inc()  # Increment request counter
-    request_timer = REQUEST_DURATION.time()  # Start timing the request
 
-
-    try: 
     # Initialize history if it's None
-        if history is None:
-            history = []
+    if history is None:
+        history = []
 
-        # Get Spotify Recs based on the user's input
-        recommendations = spotify_rec(track_name, artist, client_id, client_secret)
-        response += "\n" + recommendations    
+    response = ""  # Initialize response
 
-        if use_local_model:
-            # local inference 
-            messages = [{"role": "system", "content": system_message}]
-            for val in history:
-                if val[0]:
-                    messages.append({"role": "user", "content": val[0]})
-                if val[1]:
-                    messages.append({"role": "assistant", "content": val[1]})
-            messages.append({"role": "user", "content": f"{track_name} by {artist}"})
+    # Get Spotify Recs based on the user's input
+    recommendations = spotify_rec(track_name, artist, client_id, client_secret)
+    response += "\n" + recommendations    
 
-            response = ""
-            for output in pipe(
-                messages,
-                max_new_tokens=max_tokens,
-                do_sample=True,
-            ):
-                if stop_inference:
-                    response = "Inference cancelled."
-                    yield history + [(track_name, response)]
-                    return
-                token = output['generated_text'] 
-                response += token
-                yield history + [(track_name, response)]  # Yield history + new response
+    if use_local_model:
+        # local inference 
+        messages = [{"role": "system", "content": system_message}]
+        for val in history:
+            if val[0]:
+                messages.append({"role": "user", "content": val[0]})
+            if val[1]:
+                messages.append({"role": "assistant", "content": val[1]})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
-        else:
-            # API-based inference 
-            messages = [{"role": "system", "content": system_message}]
-            for val in history:
-                if val[0]:
-                    messages.append({"role": "user", "content": val[0]})
-                if val[1]:
-                    messages.append({"role": "assistant", "content": val[1]})
-            messages.append({"role": "user", "content": f"{track_name} by {artist}"})
+        response = ""
+        for output in pipe(
+            messages,
+            max_new_tokens=max_tokens,
+            do_sample=True,
+        ):
+            if stop_inference:
+                response = "Inference cancelled."
+                yield history + [(track_name, response)]
+                return
+            token = output['generated_text'] 
+            response += token
+            yield history + [(track_name, response)]  # Yield history + new response
 
-            for message_chunk in client.chat_completion(
-                messages,
-                max_tokens=max_tokens,
-                stream=True,
-            ):
-                if stop_inference:
-                    response = "Inference cancelled."
-                    yield history + [(track_name, response)]
-                    return
-                token = message_chunk.choices[0].delta.content
-                response += token
-                yield history + [(track_name, response)]  # Yield history + new response
+    else:
+        # API-based inference 
+        messages = [{"role": "system", "content": system_message}]
+        for val in history:
+            if val[0]:
+                messages.append({"role": "user", "content": val[0]})
+            if val[1]:
+                messages.append({"role": "assistant", "content": val[1]})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
-        SUCCESSFUL_REQUESTS.inc()  # Increment successful request counter
-    except Exception as e:
-        FAILED_REQUESTS.inc()  # Increment failed request counter
-        yield history + [(message, f"Error: {str(e)}")]
-    finally:
-        request_timer.observe_duration()  # Stop timing the request 
+        for message_chunk in client.chat_completion(
+            messages,
+            max_tokens=max_tokens,
+            stream=True,
+        ):
+            if stop_inference:
+                response = "Inference cancelled."
+                yield history + [(track_name, response)]
+                return
+            token = message_chunk.choices[0].delta.content
+            response += token
+            yield history + [(track_name, response)]  # Yield history + new response
 
 
 def cancel_inference():
@@ -211,6 +192,3 @@ with gr.Blocks(css=custom_css) as demo:
 
 if __name__ == "__main__":
     demo.launch(share=False)  # Remove share=True because it's not supported on HF Spaces
-
-
-
