@@ -58,7 +58,7 @@ stop_inference = False
 def respond(
     track_name,
     artist,
-    history: list[tuple[str, str]],
+    history: list[tuple[str, str]],  # Ensure the history is a list of tuples
     system_message="You are a music expert chatbot that provides song recommendations based on user emotions.",
     max_tokens=512,
     use_local_model=False,
@@ -84,10 +84,10 @@ def respond(
         messages = [{"role": "system", "content": system_message}]
         for val in history:
             if val[0]:
-                messages.append({"role": "user", "content": val[0]})
+                messages.append({"role": "user", "content": val[0]})  # Each message is a tuple
             if val[1]:
-                messages.append({"role": "assistant", "content": val[1]})
-        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
+                messages.append({"role": "assistant", "content": val[1]})  # Each message is a tuple
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})  # The current user message is also a tuple
 
         response = ""
         for output in pipe(
@@ -109,10 +109,10 @@ def respond(
         messages = [{"role": "system", "content": system_message}]
         for val in history:
             if val[0]:
-                messages.append({"role": "user", "content": val[0]})
+                messages.append({"role": "user", "content": val[0]})  # Each message is a tuple
             if val[1]:
-                messages.append({"role": "assistant", "content": val[1]})
-        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
+                messages.append({"role": "assistant", "content": val[1]})  # Each message is a tuple
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})  # The current user message is also a tuple
 
         for message_chunk in client.chat_completion(
             messages,
