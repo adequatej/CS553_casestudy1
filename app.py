@@ -210,7 +210,6 @@ with gr.Blocks(css=custom_css) as demo:
     cancel_button.click(cancel_inference)
 
 if __name__ == "__main__":
-    start_http_server(8000)  # Start the Prometheus HTTP server on port 8000
     demo.launch(share=False)  # Remove share=True because it's not supported on HF Spaces
 
 
