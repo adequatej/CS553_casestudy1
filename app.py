@@ -8,7 +8,7 @@ from prometheus_client import Counter, Summary, Gauge
 
 # Inference client setup
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
-pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
+#pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
 
 # Prometheus Metrics
 RECOMMENDATIONS_PROCESSED = Counter('app_recommendations_processed', 'Total number of recommendation requests processed')
