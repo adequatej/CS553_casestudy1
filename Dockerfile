@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
 WORKDIR /opt/app
-# Just copied files including key using scp
+COPY . .
 RUN pip install --no-cache-dir -r /opt/app/requirements.txt
 
 # Install packages that we need. vim is for helping with debugging

@@ -1,0 +1,4 @@
+tunnels:
+  myapp:
+    addr: 2902
+    proto: http

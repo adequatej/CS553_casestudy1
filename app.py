@@ -4,25 +4,25 @@ import torch
 from transformers import pipeline
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-
-from prometheus_client import start_http_server, Summary, Counter, Gauge
-import time
-
-
-# Define metrics
-REQUEST_COUNTER = Counter('app_requests_total', 'Total number of requests')
-SUCCESSFUL_REQUESTS = Counter('app_successful_requests_total', 'Total number of successful requests')
-FAILED_REQUESTS = Counter('app_failed_requests_total', 'Total number of failed requests')
-REQUEST_DURATION = Summary('app_request_duration_seconds', 'Time spent processing request')
+from prometheus_client import Counter, Summary, Gauge
 
 # Inference client setup
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
 pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
 
+# Prometheus Metrics
+RECOMMENDATIONS_PROCESSED = Counter('app_recommendations_processed', 'Total number of recommendation requests processed')
+SUCCESSFUL_RECOMMENDATIONS = Counter('app_successful_recommendations', 'Total number of successful recommendations')
+FAILED_RECOMMENDATIONS = Counter('app_failed_recommendations', 'Total number of failed recommendations')
+RECOMMENDATION_DURATION = Summary('app_recommendation_duration_seconds', 'Time spent processing recommendation')
+USER_INTERACTIONS = Counter('app_user_interactions', 'Total number of user interactions')
+CANCELLED_RECOMMENDATIONS = Counter('app_cancelled_recommendations', 'Total number of cancelled recommendations')
+
 # Function to get Spotify recommendations
 def spotify_rec(track_name, artist, client_id, client_secret):
     # Validate client ID and client secret
     if not client_id or not client_secret:
+        FAILED_RECOMMENDATIONS.inc()  # Increment failed recommendations if credentials are missing
         return "Please provide Spotify API credentials."
 
     # Set up Spotify credentials
@@ -32,6 +32,7 @@ def spotify_rec(track_name, artist, client_id, client_secret):
     # Get track 
     results = sp.search(q=f"track:{track_name} artist:{artist}", type='track')
     if not results['tracks']['items']:
+        FAILED_RECOMMENDATIONS.inc()  # Increment failed recommendations if no tracks found
         return "No recommendations found for the given track name and artist."
     
     track_uri = results['tracks']['items'][0]['uri']
@@ -40,14 +41,20 @@ def spotify_rec(track_name, artist, client_id, client_secret):
     recommendations = sp.recommendations(seed_tracks=[track_uri])['tracks']
     
     if not recommendations:
+        FAILED_RECOMMENDATIONS.inc()  # Increment failed recommendations if no recommendations found
         return "No recommendations found."
     
     recommendation_list = [f"{track['name']} by {track['artists'][0]['name']}" for track in recommendations]
+    
+    SUCCESSFUL_RECOMMENDATIONS.inc()  # Increment successful recommendations
+    RECOMMENDATIONS_PROCESSED.inc()  # Increment total recommendations processed
+    
     return "\n".join(recommendation_list)
 
 # Global flag to handle cancellation
 stop_inference = False
 
+@RECOMMENDATION_DURATION.time()  # Track the time it takes to process recommendations
 def respond(
     track_name,
     artist,
@@ -58,76 +65,68 @@ def respond(
     client_id=None,
     client_secret=None
 ):
-
     global stop_inference
     stop_inference = False  # Reset cancellation flag
-    REQUEST_COUNTER.inc()  # Increment request counter
-    request_timer = REQUEST_DURATION.time()  # Start timing the request
+    USER_INTERACTIONS.inc()  # Track each user interaction
 
-
-    try: 
     # Initialize history if it's None
-        if history is None:
-            history = []
+    if history is None:
+        history = []
 
-        # Get Spotify Recs based on the user's input
-        recommendations = spotify_rec(track_name, artist, client_id, client_secret)
-        response += "\n" + recommendations    
+    response = ""  # Initialize response
 
-        if use_local_model:
-            # local inference 
-            messages = [{"role": "system", "content": system_message}]
-            for val in history:
-                if val[0]:
-                    messages.append({"role": "user", "content": val[0]})
-                if val[1]:
-                    messages.append({"role": "assistant", "content": val[1]})
-            messages.append({"role": "user", "content": f"{track_name} by {artist}"})
+    # Get Spotify Recs based on the user's input
+    recommendations = spotify_rec(track_name, artist, client_id, client_secret)
+    response += "\n" + recommendations    
 
-            response = ""
-            for output in pipe(
-                messages,
-                max_new_tokens=max_tokens,
-                do_sample=True,
-            ):
-                if stop_inference:
-                    response = "Inference cancelled."
-                    yield history + [(track_name, response)]
-                    return
-                token = output['generated_text'] 
-                response += token
-                yield history + [(track_name, response)]  # Yield history + new response
+    if use_local_model:
+        # local inference 
+        messages = [{"role": "system", "content": system_message}]
+        for val in history:
+            if val[0]:
+                messages.append({"role": "user", "content": val[0]})
+            if val[1]:
+                messages.append({"role": "assistant", "content": val[1]})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
-        else:
-            # API-based inference 
-            messages = [{"role": "system", "content": system_message}]
-            for val in history:
-                if val[0]:
-                    messages.append({"role": "user", "content": val[0]})
-                if val[1]:
-                    messages.append({"role": "assistant", "content": val[1]})
-            messages.append({"role": "user", "content": f"{track_name} by {artist}"})
+        response = ""
+        for output in pipe(
+            messages,
+            max_new_tokens=max_tokens,
+            do_sample=True,
+        ):
+            if stop_inference:
+                CANCELLED_RECOMMENDATIONS.inc()  # Increment cancelled recommendations if the user cancels
+                response = "Inference cancelled."
+                yield history + [(track_name, response)]
+                return
+            token = output['generated_text'] 
+            response += token
+            yield history + [(track_name, response)]  # Yield history + new response
 
-            for message_chunk in client.chat_completion(
-                messages,
-                max_tokens=max_tokens,
-                stream=True,
-            ):
-                if stop_inference:
-                    response = "Inference cancelled."
-                    yield history + [(track_name, response)]
-                    return
-                token = message_chunk.choices[0].delta.content
-                response += token
-                yield history + [(track_name, response)]  # Yield history + new response
+    else:
+        # API-based inference 
+        messages = [{"role": "system", "content": system_message}]
+        for val in history:
+            if val[0]:
+                messages.append({"role": "user", "content": val[0]})
+            if val[1]:
+                messages.append({"role": "assistant", "content": val[1]})
+        messages.append({"role": "user", "content": f"{track_name} by {artist}"})
 
-        SUCCESSFUL_REQUESTS.inc()  # Increment successful request counter
-    except Exception as e:
-        FAILED_REQUESTS.inc()  # Increment failed request counter
-        yield history + [(message, f"Error: {str(e)}")]
-    finally:
-        request_timer.observe_duration()  # Stop timing the request 
-
+        for message_chunk in client.chat_completion(
+            messages,
+            max_tokens=max_tokens,
+            stream=True,
+        ):
+            if stop_inference:
+                CANCELLED_RECOMMENDATIONS.inc()  # Increment cancelled recommendations if the user cancels
+                response = "Inference cancelled."
+                yield history + [(track_name, response)]
+                return
+            token = message_chunk.choices[0].delta.content
+            response += token
+            yield history + [(track_name, response)]  # Yield history + new response
 
 def cancel_inference():
     global stop_inference
@@ -200,17 +199,16 @@ with gr.Blocks(css=custom_css) as demo:
     client_id = gr.Textbox(show_label=False, placeholder="Spotify Client ID:")
     client_secret = gr.Textbox(show_label=False, placeholder="Spotify Client Secret:", type="password")
 
-    cancel_button = gr.Button("Cancel Inference", variant="danger")
+    cancel_button = gr.Button("Cancel")
 
-    # Adjusted to ensure history is maintained and passed correctly
     track_name.submit(respond, [track_name, artist, chat_history, system_message, max_tokens, use_local_model, client_id, client_secret], chat_history)
-    
     artist.submit(respond, [track_name, artist, chat_history, system_message, max_tokens, use_local_model, client_id, client_secret], chat_history)
 
     cancel_button.click(cancel_inference)
 
-if __name__ == "__main__":
-    demo.launch(share=False)  # Remove share=True because it's not supported on HF Spaces
+# Expose Prometheus Metrics
+from prometheus_client import start_http_server
+start_http_server(8000)
 
-
-
+# Launch Gradio app
+demo.launch(share=True)
