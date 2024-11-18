@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
 WORKDIR /opt/app
-COPY . .
+# Just copied files including key using scp
 RUN pip install --no-cache-dir -r /opt/app/requirements.txt
 
 # Install packages that we need. vim is for helping with debugging
@@ -11,8 +11,9 @@ RUN apt-get update && \
     apt-get install -yq --no-install-recommends \
     prometheus-node-exporter
 
-EXPOSE 7860
-EXPOSE 8000 
+
+EXPOSE 7860 
+EXPOSE 8000  
 EXPOSE 9100
 
 
