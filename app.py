@@ -5,6 +5,16 @@ from transformers import pipeline
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+from prometheus_client import start_http_server, Summary, Counter, Gauge
+import time
+
+
+# Define metrics
+REQUESTS = Counter('app_requests_total', 'Total number of requests to the app')
+RECOMMENDATIONS_SUCCESS = Counter('recommendations_success_total', 'Number of successful recommendations')
+RECOMMENDATIONS_FAILURE = Counter('recommendations_failure_total', 'Number of failed recommendations')
+REQUEST_LATENCY = Summary('app_request_latency_seconds', 'Request latency in seconds')
+
 # Inference client setup
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
 pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
@@ -49,14 +59,23 @@ def respond(
     client_secret=None
 ):
 
+    # Increment request counter
+    REQUESTS.inc()
+
     global stop_inference
     stop_inference = False  # Reset cancellation flag
+
+    # Get Spotify recommendations
+    recommendations = spotify_rec(track_name, artist, client_id, client_secret)
+    if recommendations.startswith("No recommendations"):
+        RECOMMENDATIONS_FAILURE.inc()
+    else:
+        RECOMMENDATIONS_SUCCESS.inc()
+    response = recommendations  # Construct response
 
     # Initialize history if it's None
     if history is None:
         history = []
-
-    response = ""  # Initialize response
 
     # Get Spotify Recs based on the user's input
     recommendations = spotify_rec(track_name, artist, client_id, client_secret)
@@ -107,7 +126,7 @@ def respond(
                 return
             token = message_chunk.choices[0].delta.content
             response += token
-            yield history + [(track_name, response)]  # Yield history + new response
+        yield history + [(track_name, response)]  # Yield history + new response
 
 
 def cancel_inference():
@@ -191,6 +210,7 @@ with gr.Blocks(css=custom_css) as demo:
     cancel_button.click(cancel_inference)
 
 if __name__ == "__main__":
+    start_http_server(8000)  # Start the Prometheus HTTP server on port 8000
     demo.launch(share=False)  # Remove share=True because it's not supported on HF Spaces
 
 
