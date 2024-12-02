@@ -2,5 +2,5 @@
 
 # Build the container
 az containerapp delete \
-  --name cs553-cli-example-1 \
+  --name cs553azure \
   --resource-group rcpaffenroth-rg
