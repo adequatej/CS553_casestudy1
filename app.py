@@ -1,14 +1,22 @@
 import gradio as gr
 from huggingface_hub import InferenceClient
-import torch
-from transformers import pipeline
+# import torch
+# from transformers import pipeline
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from prometheus_client import Counter, Summary, Gauge
 
 # Inference client setup
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
-pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
+#pipe = pipeline("text-generation", "microsoft/Phi-3-mini-4k-instruct", torch_dtype=torch.bfloat16, device_map="auto")
+
+# Prometheus Metrics
+RECOMMENDATIONS_PROCESSED = Counter('app_recommendations_processed', 'Total number of recommendation requests processed')
+SUCCESSFUL_RECOMMENDATIONS = Counter('app_successful_recommendations', 'Total number of successful recommendations')
+FAILED_RECOMMENDATIONS = Counter('app_failed_recommendations', 'Total number of failed recommendations')
+RECOMMENDATION_DURATION = Summary('app_recommendation_duration_seconds', 'Time spent processing recommendation')
+USER_INTERACTIONS = Counter('app_user_interactions', 'Total number of user interactions')
+CANCELLED_RECOMMENDATIONS = Counter('app_cancelled_recommendations', 'Total number of cancelled recommendations')
 
 # Prometheus Metrics
 RECOMMENDATIONS_PROCESSED = Counter('app_recommendations_processed', 'Total number of recommendation requests processed')
@@ -58,7 +66,7 @@ stop_inference = False
 def respond(
     track_name,
     artist,
-    history: list[tuple[str, str]],
+    history: list[tuple[str, str]],  # Ensure the history is a list of tuples
     system_message="You are a music expert chatbot that provides song recommendations based on user emotions.",
     max_tokens=512,
     use_local_model=False,
@@ -211,4 +219,4 @@ from prometheus_client import start_http_server
 start_http_server(8000)
 
 # Launch Gradio app
-demo.launch(share=True)
+demo.launch(share=False) #7860
